@@ -73,7 +73,7 @@ def update_timer():
 
 
 songs = []
-for dirname, _, filenames in os.walk('/Users/caryslekander/Documents/taylor_swfit_lyrics/Top50'):
+for dirname, _, filenames in os.walk('../taylor_swift_lyrics/Top50'):
         for filename in filenames:
             print(filename)
             song = (Path(filename).stem)
@@ -111,7 +111,7 @@ random.shuffle(songs)
 
 
 ## GUI
-ctk.set_default_color_theme("/Users/caryslekander/Documents/taylor_swfit_lyrics/lover.json")
+ctk.set_default_color_theme("../taylor_swift_lyrics/lover.json")
 
 app = ctk.CTk()
 app.geometry("720x480")
