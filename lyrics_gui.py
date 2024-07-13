@@ -1,6 +1,8 @@
 import tkinter as tk
 import customtkinter as ctk
 
+#from gtts import gTTS 
+
 
 import time
 import os
@@ -14,6 +16,7 @@ def next_song(var = None):
     print("next")
     count_var.set(count_var.get()+1)
     song_num_var.set((song_num_var.get() + 1) % 50)
+    prev_song_var.set(song_title_var.get())
     lyrics_var.set(songs[song_num_var.get()][1])
     song_title_var.set(songs[song_num_var.get()][0].lower())
 
@@ -21,6 +24,7 @@ def skip_song(var):
     print(song_title_var.get())
     print("skip")
     song_num_var.set((song_num_var.get() + 1) % 50)
+    prev_song_var.set(song_title_var.get())
     lyrics_var.set(songs[song_num_var.get()][1])
     song_title_var.set(songs[song_num_var.get()][0].lower())
 
@@ -59,6 +63,9 @@ def switch_mode():
         
 def update_timer():
     if min_var.get() == 0 and sec_var.get() == 0:
+        with open("games.txt", "a+") as games_file:
+            print("Added to file")
+            games_file.write(f"{count_var.get()}")
         timer_var.set("Done")
         return
     elif sec_var.get() == 0:
@@ -68,8 +75,19 @@ def update_timer():
         sec_var.set(sec_var.get()-1)
 
     timer_var.set(f"{min_var.get():02d}:{sec_var.get():02d}")
-    timer_lbl.after(1000,update_timer)
+    after_id.set(timer_lbl.after(1000,update_timer))
 
+def reset_game():
+    timer_lbl.after_cancel(after_id.get())
+    min_var.set("1")
+    sec_var.set("0")
+    timer_var.set("1:00")
+    count_var.set(0)
+    song_num_var.set(0)
+    random.shuffle(songs)
+    lyrics_var.set(songs[song_num_var.get()][1])
+    song_title_var.set(songs[song_num_var.get()][0].lower())
+    after_id.set(timer_lbl.after(1000,update_timer))
 
 
 songs = []
@@ -103,15 +121,25 @@ for dirname, _, filenames in os.walk('../taylor_swift_lyrics/Top50'):
             # Remove firsts empty lines 
             empty_lines = re.compile(r'^\s*')
             raw_lyrics = empty_lines.sub('', raw_lyrics)
+            raw_lyrics = raw_lyrics.split()
+            lyrics = ""
+            count = 0
+            for i in raw_lyrics:
+                lyrics += i + " "
+                count += 1
+                if count >= 4:
+                    break
 
-            songs.append([song,raw_lyrics])
+            songs.append([song,lyrics])
+
+
 
 print(*songs,sep='\n')
 random.shuffle(songs)
 
 
 ## GUI
-ctk.set_default_color_theme("../taylor_swift_lyrics/lover.json")
+ctk.set_default_color_theme("lover.json")
 
 app = ctk.CTk()
 app.geometry("720x480")
@@ -123,28 +151,37 @@ count_var = tk.IntVar(value=0)
 lyrics_var = tk.StringVar(value=songs[count_var.get()][1])
 song_var = tk.StringVar()
 song_title_var = tk.StringVar(value=songs[count_var.get()][0].lower())
+prev_song_var = tk.StringVar()
 button_var = tk.StringVar(value="Training Mode")
 typing_mode_var = tk.BooleanVar(value=True)
+after_id = tk.StringVar()
+
 
 min_var=tk.IntVar(value="1")
 sec_var=tk.IntVar(value="0")
 timer_var=tk.StringVar(value="1:00")
 
 timer_lbl = ctk.CTkLabel(app, textvariable=timer_var)
-lyric_lbl = ctk.CTkLabel(app, textvariable=lyrics_var)
+lyric_lbl = ctk.CTkLabel(app, textvariable=lyrics_var, font=ctk.CTkFont(family='AppleGothic', size=25, weight='bold'))
+prev_song_lbl = ctk.CTkLabel(app,textvariable=prev_song_var, font=ctk.CTkFont(family='AppleGothic', size=15))
 count_lbl = ctk.CTkLabel(app, textvariable=count_var)
-typing_btn = ctk.CTkButton(app, command=switch_mode)
+typing_btn = ctk.CTkButton(app, text="Switch Mode", command=switch_mode)
+timer_btn = ctk.CTkButton(app, text="Reset Game", command=reset_game)
 song_entry = ctk.CTkEntry(app, width=350, height = 40, textvariable=song_var)
-app.bind("<Right>",next_song)
+app.bind("<Left>",skip_song)
 
-lyric_lbl.grid(row=0)
+lyric_lbl.grid(row=0, pady=10)
 song_entry.grid(row=1)
-count_lbl.grid(row=2)
-typing_btn.grid(row=3)
+prev_song_lbl.grid(row=2)
+count_lbl.grid(row=3)
 timer_lbl.grid(row=4)
+typing_btn.grid(row=5)
+timer_btn.grid(row=6, pady=10)
 
-timer_lbl.after(1000,update_timer)
+after_id.set(timer_lbl.after(1000,update_timer))
 
 song_var.trace_add("write", check_song)
 
 app.mainloop()
+
+print("Exited")
